@@ -1,0 +1,169 @@
+---
+title: "How do retirement plans differ across cultures and races?"
+output:
+  html_document:
+    df_print: paged
+---
+\clearpage
+
+## Introduction
+This report aims to address the issue of racial inequality in retirements by testing the hypothesis if Black and Hispanics have lower retirement savings than White over the time of 2006 -2016. Francis and Weller’s study (2021) indicates that more than 50% of the African American and Latino population were in jeopardy of an insecure retirement. This denotes the problem of racial gaps in retirement security that most of the Black and Hispanic population in the United States struggled with financial independence, maintaining a good quality of life and stress of medical emergencies in their retirement days. Francis and Weller (2021) explain this phenomenon with lower levels of wealth among African Americans, Latinos and Asian Americans than White Americans, which limit their financial ability on long-term savings. Kuan, Cullen and Modrek (2015) also have the same finding that African Americans and Hispanic Americans have a lower participation rate in 401(k) retirement plans than others. They further analyze the causes of the wealth gap across races with income level, inheritance and rates of homeownership. Thus, to combat the issue of racial inequality in retirements, this report exposes the root causes by illustrating the correlation between income, wealth and homeownership with retirement savings.
+
+```{r}
+## set up of the R and data
+library(tidyverse)
+
+## we only selected few sub-data sets as they are the ones we want to conduct study on
+
+lifetime_earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/lifetime_earn.csv')
+retirement <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/retirement.csv')
+income_time <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_time.csv')
+income_distribution <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_distribution.csv')
+home_owner <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/home_owner.csv')
+race_wealth <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/race_wealth.csv')
+
+## And due to consistency of the study, we are only interested in the data from 2006 to 2016,
+## therefore, we filtered out the data between 2006 to 2016 and arranged by year
+
+retirement_a = retirement %>% filter(year > 2006) %>% arrange(year)
+income_time_a = income_time %>% filter(year > 2006) %>% arrange(year)
+income_distribution_a = income_distribution %>% filter(year >2006) %>% arrange(year)
+home_owner_a = home_owner %>% filter(year > 2006) %>% arrange(year)
+race_wealth_a = race_wealth %>% filter(year > 2006) %>% filter(type == "Average") %>% arrange(year)
+```
+
+
+## Materials and Methods
+Our main indicator of an individual's retirement plan is their retirement savings recorded in the cleaned data set, “retirement”. The data is collected from the Survey of Consumer Finances in the time period of 1989 - 2016 and calculated by the Urban Institute. Approximately 6,500 U.S. families voluntarily participated in the triennial cross-sectional survey conducted by the Federal Reserve Board in cooperation with the Department of the Treasury. The survey data including families’ balance sheets, pensions, income and demographic characteristics were collected by the NORC at the University of Chicago. They were then extracted and cleaned to 30 entries of average family liquid retirement savings normalized to 2016 dollars which cover the dollars in retirement accounts like 401(k), 403 (b), and IRAs, characterized by two other variables, year and race. 
+
+## Table 1
+```{r}
+retirement_a
+```
+
+Since wealth is potentially the biggest contributing factor of retirement savings. Another main material is the data set, “race_wealth”. The data is the calculations of Urban Institute from Survey of Financial Characteristics of Consumers 1962, Survey of Changes in Family Finances 1963 and Survey of Consumer Finances 1983 - 2016. The prior two surveys are the precursor of the Survey of Consumer Finances described above. The Survey of Financial Characteristics of Consumers is designed to obtain balance sheet and income data. The Survey of Changes in Family Finances is designed to collect information on changes in assets and liabilities for families across different income levels. Wealth includes assets, savings, real estate, businesses, excluding debts. The cleaned data set consists of 96 rows of U.S. family wealth data normalized to 2016 dollars, accompanied by the measures of central tendency with mean and median and two other categorical data of race and year.
+## Table 2
+```{r}
+race_wealth_a
+```
+
+Another key contribution to wealth is income. The historical income tables given by the U.S. census bureau is a perfect source. It is joined with the data from the Current Population Survey 1963 - 2017 as described above, credited to Karen Smith. The cleaned dataset, “income_distribution” features the income median, mean, bracket and distribution across categorical variables of year, race, and  number of households. The definition of income here is an individual's private income including earnings, dividends and government monetary benefits. 
+
+## Table 3
+```{r}
+income_distribution_a
+```
+
+While on the subject of wealth, real estate ownership is a benchmark of wealth accumulation. The Urban Institute calculated U.S. homeownership rate from Current Population Survey 1976 - 2017. The Census Historical Household Surveys and the Census Annual Statistics contribute the values of 1976 - 2014, and 2016-2016 respectively. It is conducted by the U.S. Census Bureau using a probability selected sample of around 60,000 American households and sponsored by the U.S. Bureau of Labour Statistics (BLS) as the main provider of U.S. labour force statistics. The data is cleaned to 123 rows of homeownership races, categorized by year and race in the data table called “home_owner”. 
+
+## Table 4
+```{r}
+home_owner_a
+
+```
+
+## Analysis and Results
+## Hypothesis test: Black and Hispanics have lower retirement savings than White.
+## Table 5
+```{r}
+ggplot(retirement, aes(sample = retirement)) + stat_qq() + stat_qq_line() + facet_wrap("race")
+```
+For White, we can see that the first and last data do not lie on the quantile-quantile line, also there are some outliners. Therefore, we can conclude that White is not normally distributed. We can not use ANOVA and we should use median test for white instead. On the other hand, Black and Hispanic both seem to be normally distributed. Therefore, we have to use median test instead of t-test.
+
+
+```{r}
+library(smmr)
+
+## create a data set for white people retirement saving
+retirement_white <- retirement %>% filter(race == "White")
+
+## create a data set for black people retirement saving
+retirement_black <- retirement %>% filter(race == "Black")
+
+## create a data set for Hispanic people retirement saving
+retirement_hispanic <- retirement %>% filter(race == "Hispanic")
+
+## find the 95% confidence of white retirement saving median
+ci_median(retirement_white, retirement)
+```
+So the lower bound of white people retirement saving median is 36637.76
+
+```{r}
+## sign test for black
+sign_test(retirement_black, retirement, 36637.76)
+```
+
+The reason I am using lower bound is because lower represent the lowest value of the median under 95% confidence. If the lower bound of white retirement saving is still bigger than the other race retirement saving median, then very likely the actual median of white retirement saving is bigger than other race actual retirement saving median.
+
+H0: Median of Black retirement == lower bound of Median of white retirement saving
+H1: Median of Black retirement < lower bound of Median of white retirement saving
+
+Since we are testing for "<", we are looking for the lower test. Since p_value = 0.0009765625	 < 0.05, we can easily reject the null at 95% confidence and say that White people has a higher retirement saving. 
+
+```{r}
+## sign test for hispanic
+sign_test(retirement_hispanic, retirement, 36637.76)
+```
+
+H0: Median of Hispanic retirement == lower bound of Median of white retirement saving
+H1: Median of Hispanic retirement < lower bound of Median of white retirement saving
+
+Since we are testing for "<", we are looking for the lower test. Since p_value = 0.0009765625	 < 0.05, we can easily reject the null at 95% confidence and say that White people has a higher retirement saving. 
+
+## Graphical Interpretation of Wealth Gap
+##Table 6
+```{r}
+ggplot(race_wealth_a, aes(x = year, y = wealth_family, fill = race)) + geom_bar(stat = "identity", position = "dodge")
+```
+The most obvious observation from the bar chart is the wealth gap between white and others. The wealth gap is enormous throughout history from 2007 to 2017. It is also widening in the year of 2017. 
+
+## Tukey analysis on home_owner_pct
+To know if a person is ready to retire, we often want to know if they are owning a house, as renting a house would be pretty expensive and challenging to retired people without income. Therefore, when we study the retirement plan across culture and races, we are curious if housing habit, are they a home owner, is also different. In that, we concluded a tukey test whether the home owner percentage is different among white, hispanic, and black people.
+First, we plot a normal quantile plots by group to check the validity whether we can conduct a tukey test.
+```{r}
+ggplot(home_owner_a, aes(sample = home_owner_pct)) + stat_qq() + stat_qq_line() + facet_wrap( ~ race)
+```
+From the plot above, data within each group are normally distributed and equal group standard deviated. 
+```{r}
+home.aov=aov(home_owner_pct~race,data=home_owner_a)
+TukeyHSD(home.aov)
+```
+From the summary above, all tukey P-values are significantly high.
+It means they are all significantly different from each other.
+```{r}
+ggplot(home_owner_a, aes(x=race,y=home_owner_pct))+geom_boxplot()
+```
+From the boxplot and summary above, the home ownership percentage of white ethnic group is higher than the other ethnic groups without doubt. Then hispanic ethnic group is slightly higher than black ethnic group.
+In that, from home ownership or housing expense perspective, we could conclude that white ethnic group is much more prepared than the other two groups when it comes to retirement. Then, hispanic ethnic group is slightly better prepared than black ethnic group.
+
+## ANOVA test: there is no difference in the means of income over years
+
+Another key contribution to wealth is income. The historical income tables given by the U.S. census bureau is a perfect source. It is joined with the data from the Current Population Survey 1963 - 2017 as described above, credited to Karen Smith. The cleaned dataset, “income_distribution” features the income median, mean, bracket and distribution across categorical variables of year, race, and  number of households. The definition of income here is an individual's private income including earnings, dividends and government monetary benefits. 
+
+```{r}
+income_distribution_a_anova = aov(year ~ income_mean, data = income_distribution_a) 
+summary(income_distribution_a_anova)
+```
+
+H0: there is no difference in the means of income
+H1: the means of income are not equal 
+
+We are running an ANOVA test here to predict the difference in the means of income over years regardless of races. 
+According to the test summary, the p-value is 1.43e-13, which is way smaller than the significance level of 0.05. We reject the null hypothesis and conclude that the means of all income are not equal. The differences between some of the means of income are statistically significant. 
+
+
+```{r}
+plot(income_distribution_a_anova)
+```
+
+The diagnostic plots show the residuals across the range of the means of income. All the plots show a normal trend. The scatter dots on the normal QQ plot shows a normal trend which is attached to the line in the plot.
+
+## Conclusion
+The key discovery of this report is the issue of racial inequality in retirements that Black and Hispanics have lower retirement savings than White over the time of 2006 -2016 which is proven in the hypothesis test. To combat this alarming problem, we investigate the wealth gap dilemma which is the proposed root cause of racial inequality in retirements by Francis and Weller (2021). It is clearly shown in the bar chart that the wealth gap between White and other races including Black and Hispanic is enormous throughout 2007 - 2017. Since real estate is considered as an expensive asset in wealth accumulation, the wealth gap dilemma is also reflected in the findings that the White population in the United States shares the highest home ownership rate than Black and Hispanic population. There are, however, some limitations of our study because there are many dimensions to unveil the widening wealth gap dilemma that causes racial inequality in retirement. For example, racial inequality in the workplace which hinder access to employer-sponsored plans for Black and Hispanic employees (Tamborini & Kim 2020). The existing retirement savings plans are also restricted to families with lower income and wealth who may not meet the required employment standing and financial credibility (Tamborini & Kim 2020). 
+
+## Works Cited 
+Francis, D. V., & Weller, C. E. (2021). Retirement inequality by race and ethnicity. Public Policy & Aging Report, 31(3), 83-88.
+Kuan, K. Y., Cullen, M. R., & Modrek, S. (2015). Racial disparities in savings behavior for a continuously employed cohort (No. w20937). National Bureau of Economic Research.
+Merrill Edge. (2021). How much do you really need to save for retirement? https://www.merrilledge.com/article/how-much-do-you-really-need-to-save-for-retirement 
+Rfordatascience. (2021, February 8). Tidytuesday/readme.md at master · rfordatascience/tidytuesday. GitHub. Retrieved December 7, 2021, from https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-02-09/readme.md.
+
